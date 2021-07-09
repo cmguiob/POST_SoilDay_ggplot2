@@ -1,6 +1,6 @@
 ---
-title: "Visualizing profiles with | *Visualización de perfiles con*"
-subtitle: "{ggplot2}"
+title: "Soil profile visualization | *Visualización de perfiles de suelo*"
+subtitle: "{ ggplot2 }"
 author: "Carlos Guío"
 date: "7/7/2021"
 output: 
@@ -8,6 +8,10 @@ output:
     theme: leonids
     highlight: github
 ---
+
+<head>
+<meta name="google-site-verification" content="PEJQWnaHVNwyAKcCB3cgeS573kDVrq1ZCSi1euoQWpk" />
+</head>
 
 ```{r setup, message=FALSE, warning=FALSE, include = FALSE}
 
@@ -18,6 +22,7 @@ library(ggplot2)
 library(ggrepel)
 library(colorspace)
 library(tidyverse)
+library(showtext)
 ```
 
 ## Happy soil conservation day!
@@ -25,13 +30,13 @@ library(tidyverse)
 ![*A paleosol sequence in Cerro Seco*](https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/IMG_20210307_110010.jpg) 
 
 
-### Some context here | <i style="color:grey;"> Algo de contexto </i>
+### Some context here | <i style="color:grey;"> algo de contexto </i>
 <p>
-I happen to be working on a conservation proposal for an area at the southern Bogotá boundary - known as Cerro Seco **(google it!** &#128521;) -, which has been afected by sand mining for decades. This is one of the few relicts of subxerophytic ecosystems in the region, and has been little studied -if at all &#128548; - due to the socio-environmental conflicts there. We worked in close collaboration with the local community through the stages of data collection and future management planning. *A key aspect here is communication: how to make soil data more accessible through visualization?* **Here I am sharing some tricks on how to plot visually appealing soil profiles using ggplot2. It will require some familiarity with the package. Let's see some of the data first!**
+I happen to be working on a conservation proposal for an area at the southern Bogotá boundary - known as Cerro Seco **(google it!** &#128521;) -, which has been afected by sand mining for decades. This is one of the few relicts of subxerophytic ecosystems in the region, and has been little studied -if at all &#128548; - due to the socio-environmental conflicts there. We worked in close collaboration with the local community through the stages of [data](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) collection and future management planning. *A key aspect here is communication: how to make soil data more accessible through visualization?* **Here I am sharing some tricks on how to plot visually appealing soil profiles using ggplot2. It will require some familiarity with the package. Let's see some of the data first!**
 </p>
 
 <p style="color:grey; font-size:15px;"><i>
-Trabajo actuamente en una propuesta de conservación para un área en el sur de Bogotá - conocida como Cerro Seco -, la cuál ha sido explotada por décadas por la minería de arena. Es uno de los últimos relictos de ecosistémas subxerofíticos de la región y ha sido muy poco estudiado. Debido a acceso limitado, trabajamos en colaboración con la comunidad local para la recolección de datos y la planeación del futuro manejo. *Un aspecto clave aquí es la comunicación: ¿cómo hacer los datos de suelo mas accesibles a través de la visualización?.* **Aquí comparto algunos trucos sobre como crear visaulizaciones atractivas de perfiles de suelos usando ggplot2. Requiere algo del conocimiento de esta librería. Primero, veamos parte de los datos!**
+Trabajo actuamente en una propuesta de conservación para un área en el sur de Bogotá - conocida como Cerro Seco -, la cuál ha sido explotada por décadas por la minería de arena. Es uno de los últimos relictos de ecosistémas subxerofíticos de la región y ha sido muy poco estudiado. Debido a acceso limitado, trabajamos en colaboración con la comunidad local para la recolección de [datos](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) y la planeación del futuro manejo. *Un aspecto clave aquí es la comunicación: ¿cómo hacer los datos de suelo mas accesibles a través de la visualización?.* **Aquí comparto algunos trucos sobre como crear visaulizaciones atractivas de perfiles de suelos usando ggplot2. Requiere algo del conocimiento de esta librería. Primero, veamos parte de los datos!**
 </i></p>
 
 ```{r data_read}
@@ -151,7 +156,7 @@ profiles2
 
 ```
 
-### Adding complexity | <i style="color:grey;"> Agregando complejidad</i>
+### Adding complexity | <i style="color:grey;"> agregando complejidad</i>
 
 Still remember the dataset? There is a color variable that we haven´t used yet, the color of concentrations: these are *redox* or *illuvaition coatings*. We will create random points that represent these concentrations using the `CON_POR`: the percentage of concentrations in each horizon, and will encode them using `geom_jitter`.
 
@@ -212,7 +217,29 @@ What follows is personal taste related. After some adjustments of the `theme`, h
 Lo que sigue tiene que ver con gustos personales. Luego de algunos ajustes de `theme`, esta es mi versión final.
 </p>
 
-```{r echo=FALSE, out.width='80%'}
+```{r plot_vf, echo = FALSE}
 
-knitr::include_graphics("C:/Users/cguio/Documents/Working projects/Happy_Soil_Day_Ggplot_GIT/HappySoilDayGgplot/Profiles.jpg")
+# Obtener fuentes
+font_add_google(name = "Roboto Condensed", family= "robotoc")
+font_add_google(name = "Roboto", family= "roboto")
+
+
+# Definir theme
+theme_set(theme_minimal(base_family = "roboto"))
+
+theme_update(panel.grid = element_blank(),
+             axis.text = element_text(family = "robotoc",
+                                        color = "#c3beb8"),
+             axis.title = element_blank(),
+             axis.text.x = element_text(family = "robotoc",
+                           colour = c('#56B4E9', '#009E73',"#E69F00", "#D55E00"),
+                           face = "bold"),
+               axis.ticks.x =  element_blank(),
+        panel.grid.major.y = element_line(color = "#c3beb8", size = .4, linetype = c("13")))
+
+
+profiles3 +
+  geom_hline(yintercept = 0, col = '#f2d29b')+
+  theme() +
+  coord_cartesian(clip = "off")
 ```
