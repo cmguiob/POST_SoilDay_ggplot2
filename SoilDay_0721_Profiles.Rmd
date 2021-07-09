@@ -1,0 +1,218 @@
+---
+title: "Visualizing profiles with | *Visualización de perfiles con*"
+subtitle: "{ggplot2}"
+author: "Carlos Guío"
+date: "7/7/2021"
+output: 
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: github
+---
+
+```{r setup, message=FALSE, warning=FALSE, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,  warning = FALSE, fig.showtext = T, fig.retina = 1, fig.align = 'center', dpi = 300, out.width = "80%")
+
+library(aqp)
+library(ggplot2)
+library(ggrepel)
+library(colorspace)
+library(tidyverse)
+```
+
+## Happy soil conservation day!
+
+![*A paleosol sequence in Cerro Seco*](https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/IMG_20210307_110010.jpg) 
+
+
+### Some context here | <i style="color:grey;"> Algo de contexto </i>
+<p>
+I happen to be working on a conservation proposal for an area at the southern Bogotá boundary - known as Cerro Seco **(google it!** &#128521;) -, which has been afected by sand mining for decades. This is one of the few relicts of subxerophytic ecosystems in the region, and has been little studied -if at all &#128548; - due to the socio-environmental conflicts there. We worked in close collaboration with the local community through the stages of data collection and future management planning. *A key aspect here is communication: how to make soil data more accessible through visualization?* **Here I am sharing some tricks on how to plot visually appealing soil profiles using ggplot2. It will require some familiarity with the package. Let's see some of the data first!**
+</p>
+
+<p style="color:grey; font-size:15px;"><i>
+Trabajo actuamente en una propuesta de conservación para un área en el sur de Bogotá - conocida como Cerro Seco -, la cuál ha sido explotada por décadas por la minería de arena. Es uno de los últimos relictos de ecosistémas subxerofíticos de la región y ha sido muy poco estudiado. Debido a acceso limitado, trabajamos en colaboración con la comunidad local para la recolección de datos y la planeación del futuro manejo. *Un aspecto clave aquí es la comunicación: ¿cómo hacer los datos de suelo mas accesibles a través de la visualización?.* **Aquí comparto algunos trucos sobre como crear visaulizaciones atractivas de perfiles de suelos usando ggplot2. Requiere algo del conocimiento de esta librería. Primero, veamos parte de los datos!**
+</i></p>
+
+```{r data_read}
+
+horizons <- readr::read_csv('https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/Datos/Suelos_CS_Horiz.csv')
+
+site <- readr::read_csv('https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/Datos/Suelos_CS_Sitio.csv')
+
+#Select four profiles and relevant properties for plot
+hz4 <- horizons %>%
+  dplyr::filter(ID %in% c("CS01", "CS02","CS03","CS04")) %>%
+  dplyr::select(ID, BASE, TOPE, ESP, HZ, CON_POR, MX_H, MX_V, MX_C, CON_H, CON_V, CON_C )
+
+head(hz4, 10)
+
+```
+
+For the plot, the relevant variables are profile ID, depth of base and top of horizons (`BASE`, `TOPE`), horizon thickness (`ESP`), horizon name (`HZ`), percentage of concentrations (`CON_POR`), and munsell color coordinates for the matrix and the concentration (`MX_x`, `CON_x`).
+
+### A basic type of graph | <i style="color:grey;"> un tipo de gráfica básico</i>
+
+Plotting soil profiles is not much different from plotting bar charts, but it takes some tinkering. If you are short of time, functions for plotting soil profiles - and other soil stuff - has been already incorporated  in the `aqp` package by Dylan Beaudette, which has a nice  [introduction](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html).
+
+So, why bother with ggplot? Well, it has great compatibility among `geom_` family functions, which allows you to create complex plots with aesthetic freedom, it is well structured and transparent - great for debugging! -,  and it can be easily incorporated in data workflows with `tidyverse`functions (**spoiler:** pipes `%>%` coming soon) . 
+
+<p style="color:grey; font-size:15px;"><i>
+¿Por qué tomarse la molestia de usar ggplot2 para graficar perfiles, si ya existen funciones para esto? Por  [ejemplo](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html). Ggplot2 permite gran compatibilidad entre las funciones `geom_`, con lo cual tenemos libertad estética para crear gráficas complejas; es bien estructurado y transparente - genial para depurar errores! - , y puede incorporarse fácilmente en los flujos de trabajo basados en `tidyverse` (**spoiler:** pipes `%>%` a continuación). 
+</i></p>
+
+
+```{r prep_1}
+
+# Create color variables | crear variables de color
+hz4$RGBmx <- munsell2rgb(hz4$MX_H, hz4$MX_V, hz4$MX_C)
+hz4$RGBco <-munsell2rgb(hz4$CON_H,hz4$CON_V , hz4$CON_C)
+
+
+# Create factor variable with ID and HZ | Crear variable factor con ID y HZ
+hz_bdf <- hz4 %>%
+  dplyr::select(ID, BASE, TOPE, ESP,HZ, CON_POR, RGBmx, RGBco)%>%
+  dplyr::mutate(ID_HZ = paste(ID, HZ),
+         ID_HZ2 = factor(ID_HZ, ID_HZ))
+
+head(hz_bdf, 5)
+```
+
+We transformed the Munsell colors to computer-readable colors (HEX) and stored them in the RGBmx and RGBco variables.  The new factor variable `ID_HZ2` will be useful to assign fill colors in `geom_bar`. This is the function that we will tinker all the way down to the final plot.
+
+<p style="color:grey; font-size:15px;"><i>
+Transformamos los colores Munsel a colores legibles por el computador (HEX) y los guardamos en las variables RGBmx y RGBco. La nueva variable tipo factor `ID_HZ2` será util para asignar los colores de relleno en `geom_bar`. Esta es la función que estaremos ajustando hasta el final.
+</i></p>
+
+```{r plot_1}
+
+ggplot(hz_bdf, aes(x = ID, y = ESP, fill = ID_HZ2)) + 
+  geom_bar(position="dodge", stat="identity") 
+
+```
+This is the bar chart you are probably most familiar with. Here each bar represents a horizon and the height the thickness of it.The bars are grouped by `ID`, we will keep that. You see the defult colors are not very soil-like, we will change them next, along with a more useful arrangement of bars: the `stack`, as ` position` argument.
+
+<p style="color:grey; font-size:15px;"><i>
+Este es el diagrama de barras con el que probablemente tengas mas familiaridad. Aquí, cada barra representa un horizote y su altura representa el espesor. Las barras están agrupadas por `ID`, vamos a mantenerlas así. Como ves los colores por defecto no son de la "paleta de suelos"; vamos a cambiarla a continuación, junto con una configuración más útil de las barras: el `stack` (apilado), como argumento `position`.
+</i></p>
+
+```{r plot_2}
+
+profiles <- ggplot(hz_bdf, aes(x = ID, y = ESP, fill = ID_HZ2)) + 
+  geom_bar(position="stack", stat="identity") +
+  # Adds colors from the RGBmx variable
+  scale_fill_manual(values = hz_bdf$RGBmx,
+                    # Don't plot the fill legend | no grafique leyenda de relleno
+                    guide = "none") 
+
+profiles
+
+```
+
+<p>
+Now they look pretty much as I remember them &#128527;. Though you might be wondering: what kind of horizons are those? And, aren't soil profiles supposed to be dug from the top downwards? We will address that next, plus we will change the width of the bars (**aesthetics tip**: create some space!).
+</p>
+
+<p style="color:grey; font-size:15px;"><i>
+Ahora se ven casi como los recuerdo. Sin embargo, quizás te preguntas por el tipo de horizontes y ... ¿no se supone que los perfiles de suelo se cavan de la superficie hacia abajo?. Vamos a corregir esto, además de cambiar el ancho de las barras (**tip de estética**: crea algo de espacio!).
+</i></p>
+
+```{r plot_3}
+
+profiles2 <- ggplot(hz_bdf, 
+                    aes(x = ID, y = ESP, fill = forcats::fct_rev(ID_HZ2))) + 
+  geom_bar(position="stack", stat="identity", width = 0.4) +
+  # Adds colors from the RGBmx variable
+  scale_fill_manual(values = rev(hz_bdf$RGBmx),
+                    # Don't plot the fill legend | no grafique leyenda de relleno
+                    guide = "none") +
+  # Adds horizon labels | agrega etiquetas a horizontes
+  ggrepel::geom_text_repel( data = hz_bdf,   
+                   aes(y = BASE - (ESP/2), label = HZ),
+                   color = darken(hz_bdf$RGBmx, .2, space = "HCL"),
+                   size = 3,
+                   family = "robotoc",
+                   hjust = 0,
+                   direction = "y",
+                   nudge_x = 0.3,
+                   segment.size = .5,
+                   segment.linetype = "dotted",
+                   segment.square = TRUE,
+                   segment.curvature = 0.1,
+                   segment.angle = 30,
+                   segment.alpha = 0.5,
+                   box.padding = 0.3) +
+  # Reverse y axis scale | Invierte la escala del eje y
+  scale_y_reverse(breaks = c(0,100,200,300,400,500), 
+                  labels=c("0", "100", "200", "300", "400", "500"))+
+  scale_x_discrete(position = "top")
+  
+profiles2
+
+```
+
+### Adding complexity | <i style="color:grey;"> Agregando complejidad</i>
+
+Still remember the dataset? There is a color variable that we haven´t used yet, the color of concentrations: these are *redox* or *illuvaition coatings*. We will create random points that represent these concentrations using the `CON_POR`: the percentage of concentrations in each horizon, and will encode them using `geom_jitter`.
+
+<p style="color:grey; font-size:15px;"><i>
+Aún recuerdas los datos? Hay una variable de color que aún no hemos usado, el color de las concentraciones: estas son concentraciones tipo *redox* o *recubrimientos de iluviación*. Vamos a crear puntos aleatorios que representen estas concentraciones usando `CON_POR`: el porcentaje de concentraciones por horizonte, y las vamos a graficar usando `geom_jitter`.
+</i></p>
+
+```{r prep_2}
+
+# New data frame with random points | Nuevo data frame con puntos aleatorios
+hz_jdf <-  hz4 %>%
+  dplyr::select(ID, BASE, TOPE, ESP,HZ, CON_POR, RGBmx, RGBco)%>%
+  dplyr::mutate(ID = factor(ID),
+         ID_HZ = paste(ID, HZ),
+         ID_HZ2 = factor(ID_HZ, ID_HZ))%>%
+  dplyr::mutate(CON_POR = ifelse(CON_POR == 0, 1, CON_POR),
+         n = 5*ESP*CON_POR / 100,
+         mean = 0.5*(BASE - TOPE),
+         sd = 0.1*ESP)%>%
+  dplyr::mutate(samples = purrr::pmap(.[11:13], rnorm))%>%
+  tidyr::unnest(samples)
+
+head(hz_jdf, 20)
+
+```
+
+<p>
+See how the data frame expanded? For each horizon we created some random points with a `mean = BASE - TOPE/2`, a standard deviation `sd= 0.1*ESP` and a number of points equal to `n = 5*CON_POR*ESP/100` (if you have questions about it  &#128565;, [contact](https://www.linkedin.com/in/carlos-guio-blanco/) me). Ah, the plot! Here it comes.
+</p>
+
+
+<p style="color:grey; font-size:15px;"><i>
+¿Ves como se expandió el data frame? Para cada horizonte creamos puntos aleatorios con `mean = BASE - TOPE/2` , desviación estándar `sd= 0.1*ESP` y numero de puntos `n = 5*CON_POR*ESP/100` (si tienes preguntas de esto, [escríbeme](https://www.linkedin.com/in/carlos-guio-blanco/)). Ah, la gráfica! Ahí viene.
+</i></p>
+
+```{r}
+
+profiles3 <- profiles2 +
+#location from where jitter spreads out vertically
+  geom_jitter(data = hz_jdf, aes(x = ID, y = BASE - (ESP/2)),  
+              width = 0.18, 
+              # how far jitter spreads out to each side
+              height = hz_jdf$ESP*0.5,
+              size = 0.3,
+              col = hz_jdf$RGBco,
+              shape = 16)+
+  scale_y_reverse(breaks = c(0,100,200,300,400,500), 
+                  labels=c("0", "100", "200", "300", "400", "500\ncm"))+
+  scale_x_discrete(position = "top")
+
+profiles3
+
+```
+
+What follows is personal taste related. After some adjustments of the `theme`, here is my final version.
+
+<p style="color:grey; font-size:15px;"><i>
+Lo que sigue tiene que ver con gustos personales. Luego de algunos ajustes de `theme`, esta es mi versión final.
+</p>
+
+```{r echo=FALSE, out.width='80%'}
+
+knitr::include_graphics("C:/Users/cguio/Documents/Working projects/Happy_Soil_Day_Ggplot_GIT/HappySoilDayGgplot/Profiles.jpg")
+```
