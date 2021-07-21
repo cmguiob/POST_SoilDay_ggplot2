@@ -6,4 +6,4 @@
 * ### A link to the [post](https://rpubs.com/cmguiob/soilday_0721_profiles) published in Rpubs.
 * ### The [R code](https://github.com/cmguiob/HappySoilDayGgplot/blob/main/SoilDay_0721_Profiles.Rmd).
  
- ![Soil profiles](https://raw.githubusercontent.com/cmguiob/TERRAE_CerroSeco_DSM/main/Graficas/perfiles.png)
+ ![Soil profiles](Profiles.png)
