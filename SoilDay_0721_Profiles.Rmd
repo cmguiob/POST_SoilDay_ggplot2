@@ -9,37 +9,38 @@ output:
     highlight: github
 ---
 
-<head>
-<meta name="google-site-verification" content="PEJQWnaHVNwyAKcCB3cgeS573kDVrq1ZCSi1euoQWpk" />
-</head>
 
 ```{r setup, message=FALSE, warning=FALSE, include = FALSE}
-
-knitr::opts_chunk$set(echo = TRUE, message = FALSE,  warning = FALSE, fig.showtext = T, fig.retina = 1, fig.align = 'center', dpi = 300, out.width = "80%")
-
-```
-
-## Happy soil conservation day!
-
-![*A paleosol sequence in Cerro Seco*](https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/IMG_20210307_110010.jpg) 
-
-
-### Some context here · <font style="color:#c9c5c5;"> algo de contexto </font>
-<p>
-I happen to be working on a conservation proposal for an area at the southern Bogotá boundary - known as Cerro Seco **(google it!** &#128521;) -, which has been afected by sand mining for decades. This is one of the few relicts of subxerophytic ecosystems in the region, and has been little studied -if at all &#128548; - due to the socio-environmental conflicts there. We worked in close collaboration with the local community through the stages of [data](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) collection and future management planning. *A key aspect here is communication: how to make soil data more accessible through visualization?* **Here I am sharing some tricks on how to plot visually appealing soil profiles using ggplot2. It will require some familiarity with the package. Let's see some of the data  and the needed packages first**
-</p>
-
-<p style="color:#c9c5c5; font-size:15px;">
-Trabajo actuamente en una propuesta de conservación para un área en el sur de Bogotá - conocida como Cerro Seco -, la cuál ha sido explotada por décadas por la minería de arena. Es uno de los últimos relictos de ecosistémas subxerofíticos de la región y ha sido muy poco estudiado. Debido a acceso limitado, trabajamos en colaboración con la comunidad local para la recolección de [datos](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) y la planeación del futuro manejo. *Un aspecto clave aquí es la comunicación: ¿cómo hacer los datos de suelo mas accesibles a través de la visualización?.* **Aquí comparto algunos trucos sobre como crear visaulizaciones atractivas de perfiles de suelos usando ggplot2. Requiere algo del conocimiento de esta librería. Primero, veamos parte de los datos y las librerías requeridas.**
-</p>
-
-```{r data_read}
 
 library(aqp)
 library(ggplot2)
 library(ggrepel)
 library(colorspace)
 library(tidyverse)
+library(showtext)
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,  warning = FALSE, fig.showtext = T, fig.retina = 1, fig.align = 'center', dpi = 300, out.width = "80%")
+
+showtext_auto()
+#Following the advice from here: https://cran.rstudio.com/web/packages/showtext/vignettes/introduction.html
+
+```
+
+## Happy soil conservation day!
+
+![*A paleosol (buried and residual ancient soils) sequence in Cerro Seco, Bogotá. *](https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/IMG_20210307_110010.jpg) 
+
+
+### Some context here · <font style="color:#c9c5c5;"> algo de contexto </font>
+<p>
+I happen to be working on a conservation proposal for an area at the southern Bogotá boundary - known as Cerro Seco **(google it!** &#128521;) -, which has been afected by sand mining for decades. This is one of the few relicts of subxerophytic ecosystems in the region, and has been little studied -if at all &#128548; - due to the socio-environmental conflicts there. We work in close collaboration with the local community through the stages of [data](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) collection and management planning. *A key aspect here is communication: how to make soil (or paleosol in this case) data more accessible through visualization?* **Here I am sharing some tricks on how to plot visually appealing profiles using ggplot2. It will require some familiarity with the package. Let's see the required data structure and packages first!**
+</p>
+
+<p style="color:#c9c5c5; font-size:15px;">
+Trabajo actuamente en una propuesta de conservación para un área en el sur de Bogotá - conocida como Cerro Seco -, la cuál ha sido explotada por décadas por la minería de arena. Es uno de los últimos relictos de ecosistémas subxerofíticos de la región y ha sido muy poco estudiado. Debido a acceso limitado, trabajamos en colaboración con la comunidad local para la recolección de [datos](https://github.com/cmguiob/TCI_CerroSeco_git/find/main) y la planeación del uso del terreno. *Un aspecto clave aquí es la comunicación: ¿cómo hacer los datos de suelo (o paleosuelos en este caso) mas accesibles a través de la visualización?.* **Aquí comparto algunos trucos para crear visualizaciones atractivas de perfiles usando ggplot2. Requiere algo del conocimiento de esta librería. Primero, veamos la estructura de los datos y las librerías requeridas!**
+</p>
+
+```{r data_read}
 
 horizons <- readr::read_csv('https://raw.githubusercontent.com/cmguiob/TCI_CerroSeco_git/main/Datos/Suelos_CS_Horiz.csv')
 
@@ -54,16 +55,20 @@ head(hz4, 10)
 
 ```
 
-For the plot, the relevant variables are profile ID, depth of base and top of horizons (`BASE`, `TOPE`), horizon thickness (`ESP`), horizon name (`HZ`), percentage of concentrations (`CON_POR`), and munsell color coordinates for the matrix and the concentration (`MX_x`, `CON_x`).
+For the plot, the relevant variables are profile `ID`, depth of base and top of horizons (`BASE`, `TOPE`), horizon thickness (`ESP`), horizon name (`HZ`), percentage of concentrations (`CON_POR`), and Munsell color coordinates for the matrix and the concentrations (`MX_x`, `CON_x`).
+
+<p style="color:#c9c5c5; font-size:15px;">
+Para la gráfica, las variables relevantes son `ID`del perfil, profundidad de la base y el tope (`BASE`, `TOPE`), espesor de lso horizontes (`ESP`), nomenclatura del horizonte (`HZ`), porcentaje de concetraciones (`CON_POR`), y colores Munsell de la matriz y concentraciones (`MX_x`, `CON_x`).
+</p>
 
 ### A basic type of graph · <font style="color:#c9c5c5;"> un tipo de gráfica básico</font>
 
-Plotting soil profiles is not much different from plotting bar charts, but it takes some tinkering. If you are short of time, functions for plotting soil profiles - and other soil stuff - has been already incorporated  in the `aqp` package by Dylan Beaudette, which has a nice  [introduction](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html).
+Plotting soil profiles is not much different from plotting bar charts, but it takes some tinkering. If you are short of time, functions for plotting soil profiles - and other soil stuff - have been already incorporated  in the `aqp` package by Dylan Beaudette, which has a nice  [introduction](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html).
 
-So, why bother with ggplot? Well, it has great compatibility among `geom_` family functions, which allows you to create complex plots with aesthetic freedom, it is well structured and transparent - great for debugging! -,  and it can be easily incorporated in data workflows with `tidyverse`functions (**spoiler:** pipes `%>%` coming soon) . 
+So, why bother with ggplot2? Well, it has great compatibility among `geom_` family functions, which allow you to create complex plots with aesthetic freedom, it is well structured, extensively documented and transparent - great for debugging! -,  and it can be easily incorporated in data workflows with `tidyverse` functions (**spoiler:** pipes `%>%` coming soon). 
 
 <p style="color:#c9c5c5; font-size:15px;">
-¿Por qué tomarse la molestia de usar ggplot2 para graficar perfiles, si ya existen funciones para esto? Por  [ejemplo](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html). Ggplot2 permite gran compatibilidad entre las funciones `geom_`, con lo cual tenemos libertad estética para crear gráficas complejas; es bien estructurado y transparente - genial para depurar errores! - , y puede incorporarse fácilmente en los flujos de trabajo basados en `tidyverse` (**spoiler:** pipes `%>%` a continuación). 
+¿Por qué tomarse la molestia de usar ggplot2 para graficar perfiles, si ya existen funciones para esto? Por ejemplo la librería `aqp`, que tiene una genial [introducción](https://ncss-tech.github.io/AQP/aqp/aqp-intro.html) por Dylan Beadette. Pues, ggplot2 permite gran compatibilidad entre las funciones `geom_`, con lo cual tenemos libertad estética para crear gráficas complejas; es bien estructurado, detalladamente documentado y transparente - genial para depurar errores! - , y puede incorporarse fácilmente en los flujos de trabajo basados en `tidyverse` (**spoiler:** pipes `%>%` a continuación). 
 </p>
 
 
@@ -83,10 +88,10 @@ hz_bdf <- hz4 %>%
 head(hz_bdf, 5)
 ```
 
-We transformed the Munsell colors to computer-readable colors (HEX) and stored them in the RGBmx and RGBco variables.  The new factor variable `ID_HZ2` will be useful to assign fill colors in `geom_bar`. This is the function that we will tinker all the way down to the final plot.
+We just transformed the Munsell colors to computer-readable colors (HEX) and stored them in the RGBmx and RGBco variables.  The new factor variable `ID_HZ2` will be useful to assign fill colors in `geom_bar`. This is the function that we will tinker all the way down to the final plot.
 
 <p style="color:#c9c5c5; font-size:15px;">
-Transformamos los colores Munsel a colores legibles por el computador (HEX) y los guardamos en las variables RGBmx y RGBco. La nueva variable tipo factor `ID_HZ2` será util para asignar los colores de relleno en `geom_bar`. Esta es la función que estaremos ajustando hasta el final.
+Acabamos de transformar los colores Munsell a colores legibles por el computador (HEX) y los guardamos en las variables RGBmx y RGBco. La nueva variable tipo factor `ID_HZ2` será util para asignar los colores de relleno en `geom_bar`. Esta es la función que estaremos ajustando hasta el final.
 </p>
 
 ```{r plot_1}
@@ -95,7 +100,7 @@ ggplot(hz_bdf, aes(x = ID, y = ESP, fill = ID_HZ2)) +
   geom_bar(position="dodge", stat="identity") 
 
 ```
-This is the bar chart you are probably most familiar with. Here each bar represents a horizon and the height the thickness of it.The bars are grouped by `ID`, we will keep that. You see the defult colors are not very soil-like, we will change them next, along with a more useful arrangement of bars: the `stack`, as ` position` argument.
+This is the bar chart you are probably most familiar with. Here, each bar represents a horizon and the height its thickness.The bars are grouped by `ID`, we will keep it that way. You see the default colors are not very soil-like, we will change them next, along with a more useful arrangement of bars: the `stack`, as ` position` argument.
 
 <p style="color:#c9c5c5; font-size:15px;">
 Este es el diagrama de barras con el que probablemente tengas mas familiaridad. Aquí, cada barra representa un horizote y su altura representa el espesor. Las barras están agrupadas por `ID`, vamos a mantenerlas así. Como ves los colores por defecto no son de la "paleta de suelos"; vamos a cambiarla a continuación, junto con una configuración más útil de las barras: el `stack` (apilado), como argumento `position`.
@@ -115,7 +120,7 @@ profiles
 ```
 
 <p>
-Now they look pretty much as I remember them &#128527;. Though you might be wondering: what kind of horizons are those? And, aren't soil profiles supposed to be dug from the top downwards? We will address that next, plus we will change the width of the bars (**aesthetics tip**: create some space!).
+Now they look pretty much as I remember them &#128527;. Though you might be wondering: what kind of horizons are those? And, aren't soil profiles supposed to be dug from the top downwards? We will address these issues next, plus we will modify the bars' width (**aesthetics tip**: make some space in your plot!).
 </p>
 
 <p style="color:#c9c5c5; font-size:15px;">
@@ -211,15 +216,13 @@ profiles3
 
 ```
 
-What follows is personal taste related. After some adjustments of the `theme`, here is my final version.
+What follows is related to my personal taste. After some adjustments of the `theme`, here is my final version. You could add some other elements to this simple plot, such as other properties, processes, location, etc. I find the vast possibilities of data-based design pretty exciting!
 
 <p style="color:#c9c5c5; font-size:15px;">
-Lo que sigue tiene que ver con gustos personales. Luego de algunos ajustes de `theme`, esta es mi versión final.
+Lo que sigue tiene que ver con mis gustos personales. Luego de algunos ajustes de `theme`, esta es mi versión final. A esta visualización simple se pueden agregar elementos que representen otras propiedades, procesos, localización, etc. Las varias posibilidades del diseño basado en datos son emocionantes!
 </p>
 
 ```{r plot_vf, echo = FALSE}
-
-library(showtext)
 
 # Obtener fuentes
 font_add_google(name = "Roboto Condensed", family= "robotoc")
@@ -240,8 +243,20 @@ theme_update(panel.grid = element_blank(),
         panel.grid.major.y = element_line(color = "#c3beb8", size = .4, linetype = c("13")))
 
 
-profiles3 +
-  geom_hline(yintercept = 0, col = '#f2d29b')+
+profiles_vf <-profiles3 +
+  geom_hline(yintercept = 0, col = '#f2d29b') +
   theme() +
   coord_cartesian(clip = "off")
+
+profiles_vf
+
 ```
+
+```{r save_plot, echo = FALSE}
+
+
+ggsave(file = "Profiles.png", plot = profiles_vf, device = "png", type = "cairo", path = here::here(), dpi = 300, width = 8, height = 5.5)
+
+
+```
+
