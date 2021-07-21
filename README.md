@@ -4,6 +4,6 @@
  In this repository you can find:
 
 * ### A link to the [post](https://rpubs.com/cmguiob/soilday_0721_profiles) published in Rpubs.
-* ### The [R code](https://github.com/cmguiob/HappySoilDayGgplot/blob/main/SoilDay_0721_Profiles.Rmd).
+* ### The [R code](https://github.com/cmguiob/POST_SoilDay_R/blob/main/SoilDay_0721_Profiles.R).
  
  ![Soil profiles](Profiles.png)
